@@ -19,19 +19,26 @@ class ExampleServer
             Console.WriteLine("Server stopped.");
         };
 
-        server.OnClientConnected += (endpoint) =>
+        server.OnClientConnected += (client) =>
         {
-            Console.WriteLine("[{0}] Connected! Clients: {1}", endpoint, server.ConnectedClientsCount);
-        };
+            Console.WriteLine("[{0}] Connected! Clients: {1}", client.EndPoint, server.ConnectedClientsCount);
 
-        server.OnClientReceivedData += (endpoint, data) =>
-        {
-            Console.WriteLine("[{0}] Received bytes: {1}", endpoint, data.Length);
-        };
+            client.OnDataReceived += (data) =>
+            {
+                Console.WriteLine("[{0}] Received bytes: {1}", client.EndPoint, data.Length);
 
-        server.OnClientDisconnected += (endpoint) =>
-        {
-            Console.WriteLine("[{0}] Disconnected! Clients: {1}", endpoint, server.ConnectedClientsCount);
+                client.SendData(data);
+            };
+
+            client.OnDataSent += (data) =>
+            {
+                Console.WriteLine("[{0}] Sent bytes: {1}", client.EndPoint, data.Length);
+            };
+
+            client.OnDisconnected += () =>
+            {
+                Console.WriteLine("[{0}] Disconnected! Clients: {1}", client.EndPoint, server.ConnectedClientsCount);
+            };
         };
 
         server.Start();

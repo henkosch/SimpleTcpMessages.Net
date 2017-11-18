@@ -12,17 +12,13 @@ namespace SimpleTcpMessages
 
         public event Action OnStarted;
         public event Action OnStopped;
-        public event Action<EndPoint> OnClientConnected;
-        public event Action<EndPoint> OnClientDisconnected;
-        public event Action<EndPoint, Exception> OnClientReadError;
-        public event Action<EndPoint, byte[]> OnClientReceivedData;
-        public event Action<EndPoint, byte[]> OnClientSentData;
+        public event Action<TcpMessageClient> OnClientConnected;
 
         private ManualResetEvent stop;
 
-        public int ReadBufferLength { get; set; } = 10240;
+        public int ReceiveBufferSize { get; set; } = 10240;
 
-        private Dictionary<EndPoint, TcpClient> clients;
+        private HashSet<TcpMessageClient> clients;
 
         public int ConnectedClientsCount
         {
@@ -32,11 +28,16 @@ namespace SimpleTcpMessages
             }
         }
 
-        public TcpMessageServer(string host, int port)
+        public IPEndPoint EndPoint { get { return server.LocalEndpoint as IPEndPoint; } }
+        public int Port { get { return EndPoint.Port; } }
+        public IPAddress Address { get { return EndPoint.Address; } }
+        public string Host { get { return Address.ToString(); } }
+
+        public TcpMessageServer(string host = "0.0.0.0", int port = 0)
         {
             IPAddress localAddr = IPAddress.Parse(host);
             server = new TcpListener(localAddr, port);
-            clients = new Dictionary<EndPoint, TcpClient>();
+            clients = new HashSet<TcpMessageClient>();
         }
 
         public void WaitForStop()
@@ -63,8 +64,20 @@ namespace SimpleTcpMessages
             {
                 while (true)
                 {
-                    TcpClient client = server.AcceptTcpClient();
-                    ThreadPool.QueueUserWorkItem(ClientConnected, client);
+                    var tcpClient = server.AcceptTcpClient();
+
+                    var client = new TcpMessageClient(tcpClient);
+
+                    client.OnDisconnected += () =>
+                    {
+                        clients.Remove(client);
+                    };
+
+                    clients.Add(client);
+
+                    OnClientConnected?.Invoke(client);
+
+                    client.StartReceiving();
                 }
             }
             catch (Exception)
@@ -75,28 +88,6 @@ namespace SimpleTcpMessages
                 stop.Set();
                 OnStopped?.Invoke();
             }
-        }
-
-        private void ClientConnected(object obj)
-        {
-            var connection = new TcpMessageConnection(obj as TcpClient);
-
-            clients.Add(connection.EndPoint, connection.Client);
-
-            OnClientConnected?.Invoke(connection.EndPoint);
-
-            connection.OnDataReceived += (data) =>
-            {
-                OnClientReceivedData?.Invoke(connection.EndPoint, data);
-            };
-
-            connection.OnDisconnected += () =>
-            {
-                clients.Remove(connection.EndPoint);
-                OnClientDisconnected?.Invoke(connection.EndPoint);
-            };
-
-            connection.StartReceiving(ReadBufferLength);
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SimpleTcpMessages;
+using System;
 using System.Net.Sockets;
 using System.Threading;
 
@@ -8,26 +9,47 @@ namespace ExampleClient
     {
         static void Main(string[] args)
         {
-            var client = new TcpClient("127.0.0.1", 13000);
-            
-            Console.WriteLine("Connected.");
+            var client = new TcpMessageClient("127.0.0.1", 13000);
 
-            NetworkStream stream = client.GetStream();
+            client.OnConnected += () =>
+            {
+                Console.WriteLine("Connected.");
+            };
 
-            Byte[] buffer = new Byte[1024];
+            client.OnDataSent += (data) =>
+            {
+                Console.WriteLine("Sent {0} bytes.", data.Length);
+            };
 
-            stream.Write(buffer, 0, 10);
-            Console.WriteLine("Sent 10.");
-            Thread.Sleep(5000);
-            stream.Write(buffer, 0, 20);
-            Console.WriteLine("Sent 20.");
-            Thread.Sleep(5000);
-            stream.Write(buffer, 0, 30);
-            Console.WriteLine("Sent 30.");
-            Thread.Sleep(5000);
+            client.OnDataReceived += (data) =>
+            {
+                Console.WriteLine("Received {0} bytes.", data.Length);
+            };
 
-            client.Close();
-            Console.WriteLine("Disconnected");
+            client.OnDisconnected += () =>
+            {
+                Console.WriteLine("Disconnected");
+            };
+
+            client.Connect();
+            client.StartReceiving();
+
+            client.SendData(new byte[] { 1 });
+            Thread.Sleep(2000);
+
+            client.SendData(new byte[] { 1, 2 });
+            Thread.Sleep(2000);
+
+            client.SendData(new byte[] { 1, 2, 3 });
+            Thread.Sleep(2000);
+
+            client.SendData(new byte[] { 1, 2, 3, 4 });
+            Thread.Sleep(2000);
+
+            client.SendData(new byte[] { 1, 2, 3, 4, 5 });
+            Thread.Sleep(2000);
+
+            client.Disconnect();
         }
     }
 }
