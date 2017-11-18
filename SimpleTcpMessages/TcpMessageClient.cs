@@ -25,9 +25,10 @@ namespace SimpleTcpMessages
         public event Action OnConnected;
         public event Action<byte[]> OnDataReceived;
         public event Action<byte[]> OnDataSent;
+        public event Action<byte[]> OnPacketReceived;
         public event Action<Exception> OnReadError;
         public event Action OnDisconnected;
-
+        
         private ManualResetEvent disconnect;
 
         internal TcpMessageClient(TcpClient client)
@@ -61,6 +62,16 @@ namespace SimpleTcpMessages
             Client.Close();
         }
 
+        public void SendPacketKeepAlive()
+        {
+            SendData(new byte[] { 0 });
+        }
+
+        public void SendPacket(byte[] packet)
+        {
+            TcpPacketProtocol.SendPacket(packet, SendData);
+        }
+
         public void SendData(byte[] data)
         {
             Stream.Write(data, 0, data.Length);
@@ -81,6 +92,12 @@ namespace SimpleTcpMessages
         {
             try
             {
+                var packetProtocol = new TcpPacketProtocol();
+                packetProtocol.OnPacketReceived += (data) =>
+                {
+                    OnPacketReceived?.Invoke(data);
+                };
+
                 Byte[] buffer = new byte[ReceiveBufferSize];
                 int readBytes;
                 while ((readBytes = Stream.Read(buffer, 0, buffer.Length)) != 0)
@@ -88,6 +105,7 @@ namespace SimpleTcpMessages
                     var data = new byte[readBytes];
                     Array.Copy(buffer, data, readBytes);
                     OnDataReceived?.Invoke(data);
+                    packetProtocol.ReceiveBytes(data);
                 }
             }
             catch (Exception e)
@@ -100,6 +118,6 @@ namespace SimpleTcpMessages
                 OnDisconnected?.Invoke();
                 disconnect.Set();
             }
-        }
+        }        
     }
 }
