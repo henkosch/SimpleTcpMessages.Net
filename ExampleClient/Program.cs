@@ -21,9 +21,9 @@ namespace ExampleClient
                 Console.WriteLine("Sent {0} bytes.", data.Length);
             };
 
-            client.OnDataReceived += (data) =>
+            client.OnPacketReceived += (data) =>
             {
-                Console.WriteLine("Received {0} bytes.", data.Length);
+                Console.WriteLine("Received packet bytes: {0}", data.Length);
             };
 
             client.OnDisconnected += () =>
@@ -34,19 +34,19 @@ namespace ExampleClient
             client.Connect();
             client.StartReceiving();
 
-            client.SendData(new byte[] { 1 });
+            client.SendPacket(new byte[] { 1 });
             Thread.Sleep(2000);
 
-            client.SendData(new byte[] { 1, 2 });
+            client.SendPacket(new byte[] { 1, 2 });
             Thread.Sleep(2000);
 
-            client.SendData(new byte[] { 1, 2, 3 });
+            client.SendPacket(new byte[] { 1, 2, 3 });
             Thread.Sleep(2000);
 
-            client.SendData(new byte[] { 1, 2, 3, 4 });
+            client.SendPacket(new byte[] { 1, 2, 3, 4 });
             Thread.Sleep(2000);
 
-            client.SendData(new byte[] { 1, 2, 3, 4, 5 });
+            client.SendPacket(new byte[] { 1, 2, 3, 4, 5 });
             Thread.Sleep(2000);
 
             client.Disconnect();

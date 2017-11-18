@@ -23,11 +23,11 @@ class ExampleServer
         {
             Console.WriteLine("[{0}] Connected! Clients: {1}", client.EndPoint, server.ConnectedClientsCount);
 
-            client.OnDataReceived += (data) =>
+            client.OnPacketReceived += (data) =>
             {
-                Console.WriteLine("[{0}] Received bytes: {1}", client.EndPoint, data.Length);
+                Console.WriteLine("[{0}] Received packet bytes: {1}", client.EndPoint, data.Length);
 
-                client.SendData(data);
+                client.SendPacket(data);
             };
 
             client.OnDataSent += (data) =>
