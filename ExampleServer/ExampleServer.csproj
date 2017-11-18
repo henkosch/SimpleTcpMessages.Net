@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\TcpEventLibrary\SimpleTcpMessages.csproj" />
+    <ProjectReference Include="..\SimpleTcpMessages\SimpleTcpMessages.csproj" />
   </ItemGroup>
 
 </Project>
